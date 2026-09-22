@@ -1,16 +1,213 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anniversaire 2027</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #08090a;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: background 0.4s ease;
+    }
+
+    #tv {
+      display: none;
+      width: 100%;
+    }
+
+    #tv h1 {
+      font-size: 8vw;
+      margin: 0;
+      letter-spacing: 0.08em;
+    }
+
+    #remote {
+      display: none;
+      width: min(500px, 92vw);
+    }
+
+    #remote h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    #remote p {
+      opacity: 0.7;
+      margin-bottom: 30px;
+    }
+
+    button {
+      width: 100%;
+      height: 100px;
+      margin: 10px 0;
+      border: 0;
+      border-radius: 18px;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #redButton {
+      background: #b51621;
+    }
+
+    #greenButton {
+      background: #168443;
+    }
+
+    #status {
+      margin-top: 25px;
+      font-size: 14px;
+      opacity: 0.65;
+    }
+  </style>
 </head>
-<body style="margin:0;background:#08090a;color:white;font-family:Arial,sans-serif;">
-  <div style="height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;">
-    <div>
-      <div style="font-size:24px;letter-spacing:6px;">ANNIVERSAIRE 2027</div>
-      <h1 style="font-size:70px;margin:20px;">WELCOME TO LOS SANTOS</h1>
-      <div style="font-size:30px;">TEST TV ✓</div>
-    </div>
+
+<body>
+
+  <div id="tv">
+    <h1 id="tvText">CONNEXION...</h1>
   </div>
+
+  <div id="remote">
+    <h1>RÉGIE — ANNIVERSAIRE 2027</h1>
+    <p>Test de communication avec la TV</p>
+
+    <button id="redButton">ROUGE</button>
+    <button id="greenButton">VERT</button>
+
+    <div id="status">Connexion à Firebase...</div>
+  </div>
+
+
+  <script type="module">
+
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+    import {
+      getAuth,
+      signInAnonymously
+    }
+      from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+    import {
+      getDatabase,
+      ref,
+      set,
+      onValue
+    }
+      from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBmq1UUJz0eXmWyv3o-fKivBc0pCIjjonk",
+      authDomain: "anniversaire-2027.firebaseapp.com",
+      databaseURL: "https://anniversaire-2027-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "anniversaire-2027",
+      storageBucket: "anniversaire-2027.firebasestorage.app",
+      messagingSenderId: "944550207297",
+      appId: "1:944550207297:web:185cdad05150aee948cbc0"
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode") || "tv";
+
+    const tv = document.getElementById("tv");
+    const remote = document.getElementById("remote");
+    const tvText = document.getElementById("tvText");
+    const status = document.getElementById("status");
+
+    if (mode === "remote") {
+      remote.style.display = "block";
+    } else {
+      tv.style.display = "block";
+    }
+
+
+    signInAnonymously(auth)
+      .then(() => {
+
+        if (mode === "remote") {
+
+          status.textContent = "CONNECTÉ ✓";
+
+          document.getElementById("redButton").onclick = () => {
+            set(ref(database, "test"), {
+              color: "red",
+              text: "ROUGE"
+            });
+          };
+
+          document.getElementById("greenButton").onclick = () => {
+            set(ref(database, "test"), {
+              color: "green",
+              text: "VERT"
+            });
+          };
+
+        } else {
+
+          const testRef = ref(database, "test");
+
+          onValue(testRef, (snapshot) => {
+
+            const data = snapshot.val();
+
+            if (!data) {
+              document.body.style.background = "#08090a";
+              tvText.textContent = "PRÊT";
+              return;
+            }
+
+            if (data.color === "red") {
+              document.body.style.background = "#9b111e";
+            }
+
+            if (data.color === "green") {
+              document.body.style.background = "#126b38";
+            }
+
+            tvText.textContent = data.text || "PRÊT";
+
+          });
+
+        }
+
+      })
+
+      .catch((error) => {
+
+        console.error(error);
+
+        if (mode === "remote") {
+          status.textContent = "ERREUR DE CONNEXION";
+        } else {
+          tvText.textContent = "ERREUR FIREBASE";
+        }
+
+      });
+
+  </script>
+
 </body>
 </html>
